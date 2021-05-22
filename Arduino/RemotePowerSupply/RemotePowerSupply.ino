@@ -267,10 +267,10 @@ public:
 			{
 				this->serial->setTimeout(this->ReadPacketTimeoutMs);
 
-				int bytesAvailable = this->serial->available();
+				uint16_t bytesAvailable = (uint16_t)this->serial->available(); // can be safely converted as > 0  check was previously done
 				uint16_t read_bytes_so_far = this->readBytesIdx;
 				uint16_t remaining_buffer_size = sizeof(this->readBytes) - read_bytes_so_far;
-				uint16_t remaining_bytes_to_be_read = this->readBytes - read_bytes_so_far;
+				uint16_t remaining_bytes_to_be_read = this->readLength - read_bytes_so_far;
 
 				if(remaining_bytes_to_be_read > remaining_buffer_size)
 					remaining_bytes_to_be_read = remaining_buffer_size;
@@ -344,7 +344,7 @@ private:
 	OnDataReceivedCbk OnDataReceivedCbkFunc = nullptr;
 
 	// Debugging time consumption
-	uint64_t t1, t2;
+	uint64_t t1 = 0, t2 = 0;
 };
 
 // Func prototypes
