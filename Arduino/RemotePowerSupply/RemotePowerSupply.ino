@@ -3,7 +3,7 @@
 #include <LED.h>
 
 #define PIN_PWR_SUPPLY_CONTROL		8u
-#define PIN_PWR_SUPPLY_READ_STATUS	11u
+#define PIN_PWR_SUPPLY_READ_STATUS	A0
 
 class PowerSupplyManager
 {
@@ -156,17 +156,25 @@ private:
 	Drivers::GpioBase *PwrStatus = nullptr;
 	Drivers::GpioBase *PwrControl = nullptr;
 
+	// Store last read analogic value from power supply
+	uint16_t PwrLastAnalogicRead = 450;
+
 	// Callback that can be set to be triggered when power state changes
 	typedef void(*OnStateChangeCbk)(power_supply_state_t);
 	OnStateChangeCbk OnStateChangeCbkFunc = nullptr;
 
 	void ReadPowerSupplyState()
     {
+
 		power_supply_state_t prevState = this->PowerSupplyState;
 
-		if (this->PwrStatus->Read() == LOW)
+		// Update analogic val
+		this->ReadPwrAnalogicVal();
+
+		// Thresholds measured empirically
+		if (this->PwrLastAnalogicRead < 400)
 			this->PowerSupplyState = POWER_ON;
-		else
+		else if( this->PwrLastAnalogicRead >  500 )
 			this->PowerSupplyState = POWER_OFF;
 
 		// Trigger callback in case was set
@@ -175,6 +183,15 @@ private:
 			OnStateChangeCbkFunc(this->PowerSupplyState);
 		}
     }
+
+	void ReadPwrAnalogicVal()
+	{
+		uint16_t readVal = this->PwrStatus->ReadAnalog();
+		if( readVal > this->PwrLastAnalogicRead)
+			this->PwrLastAnalogicRead++;
+		else if( readVal < this->PwrLastAnalogicRead )
+			this->PwrLastAnalogicRead--;
+	}
 };
 
 class SerialCommManager
