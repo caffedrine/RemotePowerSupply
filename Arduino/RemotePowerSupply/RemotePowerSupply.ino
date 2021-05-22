@@ -8,7 +8,7 @@
 class PowerSupplyManager
 {
 public:
-	uint16_t POWER_TRANSITION_TIMEOUT_MS = 500;
+	uint16_t POWER_TRANSITION_TIMEOUT_MS = 600;
 
 	typedef enum
 	{
@@ -21,15 +21,6 @@ public:
 	{
 		this->PwrControl = new Drivers::GpioBase(PinControl, OUTPUT);
 		this->PwrStatus = new Drivers::GpioBase(PinReadStatus, INPUT);
-
-		// Read initial power supply state
-		ReadPowerSupplyState();
-
-		// Set OFF by default if power supply is detected as ON
-		if( this->PowerSupplyState == POWER_ON )
-		{
-			(void)this->PowerOFF();
-		}
 	}
 
 	~PowerSupplyManager()
@@ -157,7 +148,7 @@ private:
 	Drivers::GpioBase *PwrControl = nullptr;
 
 	// Store last read analogic value from power supply
-	uint16_t PwrLastAnalogicRead = 450;
+	uint16_t PwrLastAnalogicRead = 600;
 
 	// Callback that can be set to be triggered when power state changes
 	typedef void(*OnStateChangeCbk)(power_supply_state_t);
@@ -172,9 +163,9 @@ private:
 		this->ReadPwrAnalogicVal();
 
 		// Thresholds measured empirically
-		if (this->PwrLastAnalogicRead < 400)
+		if (this->PwrLastAnalogicRead < 550)
 			this->PowerSupplyState = POWER_ON;
-		else if( this->PwrLastAnalogicRead >  500 )
+		else if( this->PwrLastAnalogicRead >  650 )
 			this->PowerSupplyState = POWER_OFF;
 
 		// Trigger callback in case was set
