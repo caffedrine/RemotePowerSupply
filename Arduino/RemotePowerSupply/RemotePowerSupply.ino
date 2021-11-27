@@ -2,8 +2,9 @@
 #include <GpioBase.h>
 #include <LED.h>
 
-#define PIN_PWR_SUPPLY_CONTROL		8u
-#define PIN_PWR_SUPPLY_READ_STATUS	A0
+#define PIN_PWR_SUPPLY_CONTROL		2u
+#define PIN_PWR_SUPPLY_READ_STATUS	A4
+#define PIN_PWR_GLOBAL_SWITCH		A3
 
 class PowerSupplyManager
 {
@@ -17,10 +18,11 @@ public:
 		POWER_INVALID,
 	}power_supply_state_t;
 
-	PowerSupplyManager(uint8_t PinControl, uint8_t PinReadStatus)
+	PowerSupplyManager(uint8_t PinControl, uint8_t PinReadStatus, uint8_t PinGlobalSwitch)
 	{
 		this->PwrControl = new Drivers::GpioBase(PinControl, OUTPUT);
 		this->PwrStatus = new Drivers::GpioBase(PinReadStatus, INPUT);
+		this->PwrGlobalSwitch = new Drivers::GpioBase(PinGlobalSwitch, INPUT);
 	}
 
 	~PowerSupplyManager()
@@ -146,9 +148,11 @@ private:
 	// Create structures with pins used
 	Drivers::GpioBase *PwrStatus = nullptr;
 	Drivers::GpioBase *PwrControl = nullptr;
+	Drivers::GpioBase *PwrGlobalSwitch = nullptr;
 
 	// Store last read analogic value from power supply
-	uint16_t PwrLastAnalogicRead = 600;
+	uint16_t PwrLastAnalogicRead = 0;
+	uint16_t GlobSwitchLastAnalogicRead = 0;
 
 	// Callback that can be set to be triggered when power state changes
 	typedef void(*OnStateChangeCbk)(power_supply_state_t);
@@ -156,17 +160,34 @@ private:
 
 	void ReadPowerSupplyState()
     {
-
 		power_supply_state_t prevState = this->PowerSupplyState;
 
-		// Update analogic val
-		this->ReadPwrAnalogicVal();
+		// Update analogic values that needs to be processed
+		this->ReadPwrAnalogicVals();
 
-		// Thresholds measured empirically
-		if (this->PwrLastAnalogicRead < 550)
-			this->PowerSupplyState = POWER_ON;
-		else if( this->PwrLastAnalogicRead >  650 )
+		// If global switch is HIGH, it means supply is not connected to power or disconnected from priza
+		if( this->GlobSwitchLastAnalogicRead >= 100 )
+		{
 			this->PowerSupplyState = POWER_OFF;
+		}
+		else
+		{
+			// Thresholds measured empirically
+			if (this->PwrLastAnalogicRead > 512)
+				this->PowerSupplyState = POWER_ON;
+			else
+				this->PowerSupplyState = POWER_OFF;
+
+	//		if( this->PwrStatus->Read() == HIGH)
+	//		{
+	//			this->PowerSupplyState = POWER_OFF;
+	//		}
+	//		else
+	//		{
+	//			this->PowerSupplyState = POWER_ON;
+	//		}
+		}
+
 
 		// Trigger callback in case was set
 		if( (OnStateChangeCbkFunc != nullptr) && (prevState != this->PowerSupplyState) )
@@ -175,13 +196,19 @@ private:
 		}
     }
 
-	void ReadPwrAnalogicVal()
+	void ReadPwrAnalogicVals()
 	{
 		uint16_t readVal = this->PwrStatus->ReadAnalog();
 		if( readVal > this->PwrLastAnalogicRead)
 			this->PwrLastAnalogicRead++;
 		else if( readVal < this->PwrLastAnalogicRead )
 			this->PwrLastAnalogicRead--;
+
+		readVal = this->PwrGlobalSwitch->ReadAnalog();
+		if( readVal > this->GlobSwitchLastAnalogicRead)
+			this->GlobSwitchLastAnalogicRead+=20;
+		else if( readVal < this->GlobSwitchLastAnalogicRead )
+			this->GlobSwitchLastAnalogicRead--;
 	}
 };
 
@@ -361,7 +388,7 @@ void PowerSupplyOnStateChange(PowerSupplyManager::power_supply_state_t new_state
 
 // Create a handler for power supply
 Drivers::LED led(13); // debugging led
-PowerSupplyManager powerSupply(PIN_PWR_SUPPLY_CONTROL, PIN_PWR_SUPPLY_READ_STATUS);
+PowerSupplyManager powerSupply(PIN_PWR_SUPPLY_CONTROL, PIN_PWR_SUPPLY_READ_STATUS, PIN_PWR_GLOBAL_SWITCH);
 SerialCommManager comm(&Serial, 9600);
 
 void setup()
@@ -405,6 +432,7 @@ void PowerSupplyOnStateChange(PowerSupplyManager::power_supply_state_t new_state
 
 // The loop function is called in an endless loop
 uint64_t prevMillis;
+unsigned long int counter = 0;
 void loop()
 {
 	// Handle main function of power supply
@@ -412,11 +440,11 @@ void loop()
 
 	// Toggle power supply
 	comm.MainFunction();
+//
+//	Serial.print(counter);
+//	Serial.print(". PWR: " + String(analogRead(PIN_PWR_SUPPLY_READ_STATUS)));
+//	Serial.println(", SWC: " + String(analogRead(PIN_PWR_GLOBAL_SWITCH)));
+//	counter++;
+//	delay(250);
 
-//	if( millis() - prevMillis >= 200 )
-//	{
-//		prevMillis = millis();
-//		Serial.print("Power status: ");
-//		Serial.println(powerSupply.GetPowerSupplyState());
-//	}
 }
