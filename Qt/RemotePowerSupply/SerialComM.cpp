@@ -1,10 +1,10 @@
-#include "SerialClient.h"
+#include "SerialComM.h"
 
-SerialClient::SerialClient()
+SerialComM::SerialComM()
 {
 }
 
-SerialClient::~SerialClient()
+SerialComM::~SerialComM()
 {
     if(this->isOpen())
 	{
@@ -14,17 +14,17 @@ SerialClient::~SerialClient()
 	}
 }
 
-QString SerialClient::getLastError()
+QString SerialComM::getLastError()
 {
 	return this->lastError;
 }
 
-void SerialClient::setLastError(QString error)
+void SerialComM::setLastError(QString error)
 {
 	this->lastError = error;
 }
 
-bool SerialClient::connect(QString portName, BaudRate baudRate)
+bool SerialComM::connect(QString portName, BaudRate baudRate)
 {
 	//Make sure we are not already connected
     if(this->isOpen())
@@ -78,7 +78,7 @@ bool SerialClient::connect(QString portName, BaudRate baudRate)
 	}
 }
 
-bool SerialClient::disconnect()
+bool SerialComM::disconnect()
 {
     if(pSerialPort == Q_NULLPTR)
 		return true;
@@ -95,7 +95,7 @@ bool SerialClient::disconnect()
     return true;
 }
 
-void SerialClient::connectionStatusChanged(QSerialPort::SerialPortError errNo)
+void SerialComM::connectionStatusChanged(QSerialPort::SerialPortError errNo)
 {
 	if(errNo == 0)
 	{
@@ -107,7 +107,7 @@ void SerialClient::connectionStatusChanged(QSerialPort::SerialPortError errNo)
 	}
 }
 
-qint64 SerialClient::write(QByteArray writeData)
+qint64 SerialComM::write(QByteArray writeData)
 {
     if(!this->isOpen())
     {
@@ -132,7 +132,7 @@ qint64 SerialClient::write(QByteArray writeData)
 	}
 }
 
-QList<QString> SerialClient::getSerialPorts()
+QList<QString> SerialComM::getSerialPorts()
 {
 	QList<QString> ports;
 
@@ -154,7 +154,7 @@ QList<QString> SerialClient::getSerialPorts()
 	return ports;
 }
 
-QString SerialClient::readString()
+QString SerialComM::readString()
 {
     if(!this->isOpen())
     {
@@ -202,7 +202,7 @@ QString SerialClient::readString()
     return line;
 }
 
-QString SerialClient::readLine()
+QString SerialComM::readLine()
 {
     if(!this->isOpen())
     {
@@ -253,7 +253,7 @@ QString SerialClient::readLine()
     return line;
 }
 
-bool SerialClient::isOpen()
+bool SerialComM::isOpen()
 {
     if(this->pSerialPort == Q_NULLPTR || this->pSerialPort == 0)
         return false;
@@ -263,7 +263,7 @@ bool SerialClient::isOpen()
 	return false;
 }
 
-qint64 SerialClient::read(char *buffer, qint64 maxLen)
+qint64 SerialComM::read(char *buffer, qint64 maxLen)
 {
     if(!this->isOpen())
     {
@@ -273,6 +273,17 @@ qint64 SerialClient::read(char *buffer, qint64 maxLen)
 
     qint64 readBytes = pSerialPort->read(buffer, maxLen);
     return readBytes;
+}
+
+QByteArray SerialComM::readAll()
+{
+    if(!this->isOpen())
+    {
+        this->setLastError("Port is not oppened for reading!");
+        return QByteArray();
+    }
+
+    return this->pSerialPort->readAll();
 }
 
 

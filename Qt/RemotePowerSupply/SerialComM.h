@@ -9,15 +9,15 @@
 #include <QDebug>
 #include <QTime>
 
-class SerialClient: public QObject
+class SerialComM: public QObject
 {
 	Q_OBJECT
 
 public:
 	typedef QSerialPort::BaudRate BaudRate;	//let user choose his own boudrate
 
-    SerialClient();
-    ~SerialClient();
+    SerialComM();
+    ~SerialComM();
 
 private:
 	//Serial port handler
@@ -32,6 +32,7 @@ public:
 
     qint64 write(QByteArray data);
     qint64 read(char *buffer, qint64 max_len);
+    QByteArray readAll();
 	QString readString();
     QString readLine();
 
