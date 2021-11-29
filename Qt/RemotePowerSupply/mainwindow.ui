@@ -82,9 +82,9 @@
     <widget class="QLabel" name="connectionStatusLabel">
      <property name="geometry">
       <rect>
-       <x>70</x>
+       <x>60</x>
        <y>170</y>
-       <width>101</width>
+       <width>111</width>
        <height>21</height>
       </rect>
      </property>
@@ -97,6 +97,9 @@
      </property>
      <property name="text">
       <string>NOT CONNECTED</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
      </property>
     </widget>
     <widget class="QPushButton" name="pushButton_connectSerialPort">
@@ -248,9 +251,9 @@
     <widget class="QLabel" name="connectionStatusLabel_TcpServerState">
      <property name="geometry">
       <rect>
-       <x>110</x>
+       <x>100</x>
        <y>170</y>
-       <width>61</width>
+       <width>71</width>
        <height>21</height>
       </rect>
      </property>
@@ -263,6 +266,9 @@
      </property>
      <property name="text">
       <string>STOPPED</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
      </property>
     </widget>
     <widget class="QLabel" name="statusLabel_2">
