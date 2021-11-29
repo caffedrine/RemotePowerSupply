@@ -23,6 +23,11 @@ public:
 		this->PwrControl = new Drivers::GpioBase(PinControl, OUTPUT);
 		this->PwrStatus = new Drivers::GpioBase(PinReadStatus, INPUT);
 		this->PwrGlobalSwitch = new Drivers::GpioBase(PinGlobalSwitch, INPUT);
+
+		// Init with current values
+		this->PwrLastAnalogicRead = this->PwrStatus->ReadAnalog();
+		this->GlobSwitchLastAnalogicRead = this->PwrGlobalSwitch->ReadAnalog();
+
 	}
 
 	~PowerSupplyManager()
@@ -177,20 +182,11 @@ private:
 				this->PowerSupplyState = POWER_ON;
 			else
 				this->PowerSupplyState = POWER_OFF;
-
-	//		if( this->PwrStatus->Read() == HIGH)
-	//		{
-	//			this->PowerSupplyState = POWER_OFF;
-	//		}
-	//		else
-	//		{
-	//			this->PowerSupplyState = POWER_ON;
-	//		}
 		}
 
 
 		// Trigger callback in case was set
-		if( (OnStateChangeCbkFunc != nullptr) && (prevState != this->PowerSupplyState) )
+		if( (OnStateChangeCbkFunc != nullptr) && (prevState != this->PowerSupplyState) && (prevState != POWER_INVALID) )
 		{
 			OnStateChangeCbkFunc(this->PowerSupplyState);
 		}
@@ -423,10 +419,13 @@ void SerialOnCommandReceived(uint8_t *data, uint16_t data_len)
 	{
 		comm.SendPacket( (powerSupply.GetPowerSupplyState() == PowerSupplyManager::POWER_ON) ? "ON" : "OFF", 1);
 	}
+
+	// Packet type 0 si ACK to a request. Packet type 1 is answer to a request
 }
 
 void PowerSupplyOnStateChange(PowerSupplyManager::power_supply_state_t new_state)
 {
+	// Sent after read was stabilized
 	comm.SendPacket( (new_state == PowerSupplyManager::POWER_ON)? "ON" : "OFF", 1);
 }
 

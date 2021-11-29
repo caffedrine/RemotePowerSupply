@@ -43,12 +43,22 @@ void MainWindow::showPowerSupplyState(power_supply_state_t state)
         this->ui->label_PowerSupplyStatus->setText("ON");
         this->ui->label_PowerSupplyStatus->setStyleSheet("QLabel { color : green; }");
         this->ui->radioButton_powerON->setChecked(true);
+
+        // Show light bulf OFF
+        QImage img(":/on.png");
+        QPixmap pm = QPixmap::fromImage(img);
+        this->ui->label_LightBulb->setPixmap(pm);
     }
     else if( state == POWER_OFF )
     {
         this->ui->label_PowerSupplyStatus->setText("OFF");
         this->ui->label_PowerSupplyStatus->setStyleSheet("QLabel { color : red; }");
         this->ui->radioButton_powerOFF->setChecked(true);
+
+        // Show light bulf OFF
+        QImage img(":/off.png");
+        QPixmap pm = QPixmap::fromImage(img);
+        this->ui->label_LightBulb->setPixmap(pm);
     }
     else
     {
