@@ -13,17 +13,24 @@ typedef enum
     POWER_INVALID
 } power_supply_state_t;
 
-class PowerSupplyM: QObject
+class PowerSupplyM: public QObject
 {
         Q_OBJECT
     public:
         PowerSupplyM(SerialComM *serialComHandler);
         bool PowerON();
         bool PowerOFF();
-        power_supply_state_t GetPowerState();
+        bool RequestPowerState();
 
     private:
         SerialComM *serial = Q_NULLPTR;
+        bool SendPacket(quint16 packetType, QByteArray packetBytes);
+
+    private slots:
+        void OnPacketReceived(quint16 packetType, QByteArray packetBytes);
+
+    signals:
+        void PowerStatusChanged(power_supply_state_t newState);
 
 };
 

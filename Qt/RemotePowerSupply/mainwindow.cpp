@@ -10,6 +10,11 @@ MainWindow::MainWindow(QWidget *parent) :
     this->ui->comboBox_BaudRates->addItems({"1200", "2400", "4800", "9600", "14400", "19200", "38400", "57600", "115200"});
     this->ui->comboBox_BaudRates->setCurrentIndex(3);
     this->baud = QSerialPort::Baud9600;
+
+    this->on_pushButton_updateList_clicked();
+
+    // Select last index from the list as this is most usual
+    this->ui->comboBox_serialSlots->setCurrentIndex(this->ui->comboBox_serialSlots->count() - 1);
 }
 
 MainWindow::~MainWindow()
@@ -36,17 +41,21 @@ void MainWindow::showPowerSupplyState(power_supply_state_t state)
     if( state == POWER_ON )
     {
         this->ui->label_PowerSupplyStatus->setText("ON");
-        ui->label_PowerSupplyStatus->setStyleSheet("QLabel { color : green; }");
+        this->ui->label_PowerSupplyStatus->setStyleSheet("QLabel { color : green; }");
+        this->ui->radioButton_powerON->setChecked(true);
     }
     else if( state == POWER_OFF )
     {
-        ui->label_PowerSupplyStatus->setText("OFF");
-        ui->label_PowerSupplyStatus->setStyleSheet("QLabel { color : red; }");
+        this->ui->label_PowerSupplyStatus->setText("OFF");
+        this->ui->label_PowerSupplyStatus->setStyleSheet("QLabel { color : red; }");
+        this->ui->radioButton_powerOFF->setChecked(true);
     }
     else
     {
         this->ui->label_PowerSupplyStatus->setText("N/A");
-        ui->label_PowerSupplyStatus->setStyleSheet("QLabel { color : black; }");
+        this->ui->label_PowerSupplyStatus->setStyleSheet("QLabel { color : black; }");
+        this->ui->radioButton_powerON->setChecked(false);
+        this->ui->radioButton_powerOFF->setChecked(false);
     }
 }
 
@@ -78,7 +87,7 @@ void MainWindow::on_pushButton_updateList_clicked()
     }
 
     //Send some debug info
-    qDebug() << ("SUCCESS: Serial ports list updated!");
+    qDebug() << "SUCCESS: Serial ports list updated!";
 }
 
 void MainWindow::on_pushButton_connectSerialPort_clicked()
@@ -98,23 +107,28 @@ void MainWindow::on_pushButton_connectSerialPort_clicked()
     serialPort = new SerialComM();
 
     //connecting serial signals
-//    connect(serialPort, SIGNAL(connectionStatusChanged(bool)), this, SLOT(setSerialPortStatus(bool)));
-//    connect(serialPort, SIGNAL(readyRead()), this, SLOT(serialDataReceivingSlot()));
-
+    connect(this->serialPort, SIGNAL(connectionStatusChanged(bool)), this, SLOT(showSerialPortStatus(bool)));
 
     if(serialPort->connect(portName, this->baud))
     {
-        qDebug() << ("SUCCESS: CONNECTED!!1");
+        qDebug() << "SUCCESS: CONNECTED to " << portName;
         this->showSerialPortStatus(true);
     }
     else
     {
-        qDebug() << ("FAILED2CONN: " + serialPort->getLastError());
+        qDebug() << "FAILED2CONN: " << serialPort->getLastError();
         if(serialPort != Q_NULLPTR || serialPort)
         {
             delete serialPort;
             serialPort = Q_NULLPTR;
         }
+    }
+
+    // Create power supply handler
+    if( this->serialPort )
+    {
+        this->powerSupply = new PowerSupplyM(this->serialPort);
+        connect(this->powerSupply, SIGNAL(PowerStatusChanged(power_supply_state_t)), this, SLOT(showPowerSupplyState(power_supply_state_t)));
     }
 }
 
@@ -122,7 +136,7 @@ void MainWindow::on_pushButton_disconnectSerialPort_clicked()
 {
     if(serialPort == Q_NULLPTR || serialPort == 0 || !this->serialPort->isOpen())
     {
-        qDebug() << ("FAILED: You're not connected to serial port!");
+        qDebug() << "FAILED: You're not connected to serial port!";
         return;
     }    
 
@@ -135,13 +149,13 @@ void MainWindow::on_pushButton_disconnectSerialPort_clicked()
         }
         else
         {
-            qDebug() << ("FAILED: " + serialPort->getLastError());
+            qDebug() << "FAILED: " << serialPort->getLastError();
             return;
         }
     }
     else
     {
-        qDebug() << ("FAILED: " + serialPort->getLastError());
+        qDebug() << "FAILED: " << serialPort->getLastError();
     }
 }
 
@@ -181,5 +195,5 @@ void MainWindow::on_pushButton_refreshPowerState_clicked()
         return;
     }
 
-    this->showPowerSupplyState(this->powerSupply->GetPowerState());
+    this->powerSupply->RequestPowerState();
 }

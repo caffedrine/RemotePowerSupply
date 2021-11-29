@@ -9,6 +9,21 @@
 #include <QDebug>
 #include <QTime>
 
+typedef enum
+{
+    WAIT_START_TAG,
+    WAIT_LENGTH,
+    WAIT_PACKET_TYPE,
+    WAIT_PACKET_PAYLOAD
+} serial_comm_packet_read_state_t;
+
+typedef struct
+{
+    uint16_t Length;
+    uint16_t Type;
+    QByteArray Payload;
+}serial_comm_packet_t;
+
 class SerialComM: public QObject
 {
 	Q_OBJECT
@@ -27,18 +42,17 @@ private:
 	QString lastError;
 
 public:
+    qint64 ReadTimeoutMs;
+    serial_comm_packet_read_state_t ReadState = WAIT_START_TAG;
+    QByteArray ReadDataBuffer;
+    serial_comm_packet_t CurrPacket;
+
 	bool connect(QString portName, BaudRate baudRate);
 	bool disconnect();
 
-    qint64 write(QByteArray data);
-    qint64 read(char *buffer, qint64 max_len);
-    QByteArray readAll();
-	QString readString();
-    QString readLine();
-
 	static QList<QString> getSerialPorts();
 	bool isOpen();
-
+    bool SendPacket(quint16 packetType, QByteArray packetBytes);
 	//Other methods
 	QString getLastError();
 
@@ -47,9 +61,10 @@ private:
 
 private slots:
 	void connectionStatusChanged(QSerialPort::SerialPortError errNo);
+    void readyRead();
 
 signals:
-	void readyRead();
+    void packetReceived(quint16 packetType, QByteArray packeBytes);
 	void connectionStatusChanged(bool connected);
 };
 

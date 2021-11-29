@@ -34,3 +34,4 @@ FORMS += \
 
 RESOURCES += \
     res/resources.qrc
+

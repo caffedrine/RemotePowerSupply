@@ -44,7 +44,7 @@ bool SerialComM::connect(QString portName, BaudRate baudRate)
 
 	//Connecting signals to slots
 	QObject::connect(pSerialPort, SIGNAL(error(QSerialPort::SerialPortError)), this, SLOT(connectionStatusChanged(QSerialPort::SerialPortError)));
-	QObject::connect(pSerialPort, SIGNAL(readyRead()), this, SIGNAL(readyRead()));
+    QObject::connect(pSerialPort, SIGNAL(readyRead()), this, SLOT(readyRead()));
 
 
     /* Set serial port name */
@@ -107,29 +107,87 @@ void SerialComM::connectionStatusChanged(QSerialPort::SerialPortError errNo)
 	}
 }
 
-qint64 SerialComM::write(QByteArray writeData)
+void SerialComM::readyRead()
 {
-    if(!this->isOpen())
+    ///
+    /// Packet format:
+    /// #<length>@<packet_type>$<payload>
+    ///
+    ///
+
+    // Check timeout for one packet read
+    if( (this->ReadState != WAIT_START_TAG) && (600 < (QDateTime::currentMSecsSinceEpoch() - this->ReadTimeoutMs)) )
     {
-        this->setLastError("Port is not open for writing!");
-        return -1;
+        qDebug() << "Serial packet read timout reached";
+        this->ReadState = WAIT_START_TAG;
     }
 
-    if(writeData.length() == 0)
+    // Read serial data and append to current buffer
+    this->ReadDataBuffer += this->pSerialPort->readAll();
+    //qDebug() << "SERIAL RECV: " << this->pSerialPort->readAll();
+
+    // Check state. Wait for a fragmented packet or for a new packet
+    if( this->ReadState == WAIT_START_TAG )
     {
-        this->setLastError("Invalid 0 length data to send!");
-        return -1;
+        // Read start token and remove all data form buffe runtil reaching it
+        if(this->ReadDataBuffer.indexOf('#') >= 0)
+        {
+            this->ReadDataBuffer = this->ReadDataBuffer.mid( this->ReadDataBuffer.indexOf('#') + 1 );
+
+            // token found, advance the state and start timeout
+            this->ReadState = WAIT_LENGTH;
+            this->ReadTimeoutMs = QDateTime::currentMSecsSinceEpoch();
+        }
+        else
+        {
+            // Data is junk since start token is not found, so discard it
+            this->ReadDataBuffer = QByteArray();
+        }
     }
 
-    if( this->isOpen() )
-	{
-        return pSerialPort->write( writeData );
-	}
-	else
-	{
-		this->setLastError(pSerialPort->errorString());
-		return -1;
-	}
+
+    if( this->ReadState == WAIT_LENGTH )
+    {
+        if( this->ReadDataBuffer.indexOf('@') >= 0 )
+        {
+            this->CurrPacket.Length = this->ReadDataBuffer.left(this->ReadDataBuffer.indexOf('@')).toInt();
+
+            // Remove the bytes already read and proceeed with next state
+            this->ReadDataBuffer.remove(0, this->ReadDataBuffer.indexOf('@') + 1);
+            this->ReadState = WAIT_PACKET_TYPE;
+        }
+    }
+
+
+    if( this->ReadState == WAIT_PACKET_TYPE )
+    {
+        if( this->ReadDataBuffer.indexOf('$') >= 0 )
+        {
+            QString typeStr = this->ReadDataBuffer.left(this->ReadDataBuffer.indexOf('$'));
+            this->CurrPacket.Type = typeStr.toInt();
+
+            // Remove the bytes already read and proceeed with next state
+            this->ReadDataBuffer.remove(0, this->ReadDataBuffer.indexOf('$') + 1);
+            this->ReadState = WAIT_PACKET_PAYLOAD;
+        }
+    }
+
+    if( this->ReadState == WAIT_PACKET_PAYLOAD )
+    {
+        if( this->ReadDataBuffer.count() >= this->CurrPacket.Length )
+        {
+            this->CurrPacket.Payload = this->ReadDataBuffer.left(this->CurrPacket.Length);
+
+            // Remove processed bytes from buffer
+            this->ReadDataBuffer.remove(0, this->CurrPacket.Length);
+
+            // Emit signal that a packet was received
+            emit this->packetReceived(this->CurrPacket.Type, this->CurrPacket.Payload);
+
+            // Reset state
+            this->ReadState = WAIT_START_TAG;
+        }
+    }
 }
 
 QList<QString> SerialComM::getSerialPorts()
@@ -154,136 +212,56 @@ QList<QString> SerialComM::getSerialPorts()
 	return ports;
 }
 
-QString SerialComM::readString()
-{
-    if(!this->isOpen())
-    {
-        this->setLastError("Port is not oppened for reading!");
-        return "-1";
-    }
-
-    /* Read data */
-    QByteArray chunk;
-    static QByteArray recvBytes;
-
-    if(pSerialPort->readChannelCount() <= 0)
-        return "" ;
-
-    /* Receive a chunk and then validate it */
-    chunk = pSerialPort->readAll();
-    if(chunk.length() <= 0)
-        return "";
-
-    /* Copy recv chunk in the static recvBuffer */
-    for(int i=0; i < chunk.length(); i++)
-    {
-            recvBytes.append(chunk.at(i));
-    }
-
-    /* Store data until a complete line is received */
-    bool foundNewline = false;
-    for(int i=0; i < chunk.length(); i++)
-    {
-        if(chunk.at(i) == '\0')
-        {
-            foundNewline = true;
-            break;
-        }
-    }
-    if(!foundNewline)
-        return "";
-
-    /* Store recv line and clear recv buffer for further readings */
-    QString line = QString( recvBytes );
-
-    recvBytes.clear();
-
-    /* Return line */
-    return line;
-}
-
-QString SerialComM::readLine()
-{
-    if(!this->isOpen())
-    {
-        this->setLastError("Port is not oppened for reading!");
-        return "-1";
-    }
-
-    /* Read data */
-    QByteArray chunk;
-    static QByteArray recvBytes;
-
-    if(pSerialPort->readChannelCount() <= 0)
-        return "" ;
-
-    /* Receive a chunk and then validate it */
-    chunk = pSerialPort->readLine();
-    if(chunk.length() <= 0)
-        return "";
-
-    /* Copy recv chunk in the static recvBuffer */
-    for(int i=0; i < chunk.length(); i++)
-    {
-        if(chunk.at(i) != '\x00')           /* Ignore string termination */
-            recvBytes.append(chunk.at(i));
-    }
-
-    /* Store data until a complete line is received */
-    bool foundNewline = false;
-    for(int i=0; i < chunk.length(); i++)
-    {
-        if(chunk.at(i) == '\n')
-        {
-            foundNewline = true;
-            break;
-        }
-    }
-    if(!foundNewline)
-        return "";
-
-    /* Store recv line and clear recv buffer for further readings */
-    QString line = QString( recvBytes );
-
-    //qDebug() << recvBytes;
-
-    recvBytes.clear();
-
-    /* Return line */
-    return line;
-}
-
 bool SerialComM::isOpen()
 {
     if(this->pSerialPort == Q_NULLPTR || this->pSerialPort == 0)
+    {
         return false;
+    }
 
 	if(pSerialPort->isOpen() && pSerialPort->isWritable() && pSerialPort->isReadable())
+    {
 		return true;
+    }
+
 	return false;
 }
 
-qint64 SerialComM::read(char *buffer, qint64 maxLen)
+bool SerialComM::SendPacket(quint16 packetType, QByteArray packetBytes)
 {
-    if(!this->isOpen())
+    // Packet type not used for now
+
+    QByteArray packet;
+
+    // Add start token
+    packet.append('#');
+
+    // Add packet length
+    if( packetBytes.count() < 255 )
     {
-        this->setLastError("Port is not oppened for reading!");
-        return -1;
+        packet.append((char)(0));
+        packet.append((char)(packetBytes.count()));
+    }
+    else
+    {
+        packet.append((char)(packetBytes.count() >> 8));
+        packet.append((char)(packetBytes.count() & 0x00FF ));
     }
 
-    qint64 readBytes = pSerialPort->read(buffer, maxLen);
-    return readBytes;
-}
+    // Add packet
+    packet += packetBytes;
 
-QByteArray SerialComM::readAll()
-{
-    if(!this->isOpen())
+    if(  this->pSerialPort->write(packet) )
     {
-        this->setLastError("Port is not oppened for reading!");
-        return QByteArray();
+        qDebug() << "SERIAL SEND >: " << packet;
+        return true;
     }
-
-    return this->pSerialPort->readAll();
+    else
+    {
+        qDebug() << "[ERROR] SERIAL SEND >: " << packet;
+        return false;
+    }
 }
+
 
 

@@ -22,6 +22,10 @@ public:
     ~MainWindow();
 
 private slots:
+    void showSerialPortStatus(bool connected);
+    void showPowerSupplyState(power_supply_state_t state);
+    void showTcpServerState(bool started);
+
     void on_pushButton_updateList_clicked();
     void on_pushButton_connectSerialPort_clicked();
     void on_pushButton_disconnectSerialPort_clicked();
@@ -40,10 +44,6 @@ private:
 
     /* Power supply handler */
     class PowerSupplyM *powerSupply = Q_NULLPTR;
-
-    void showSerialPortStatus(bool connected);
-    void showPowerSupplyState(power_supply_state_t state);
-    void showTcpServerState(bool started);
 };
 
 #endif // MAINWINDOW_H
