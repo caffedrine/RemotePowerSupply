@@ -1,7 +1,7 @@
 
 QT       += core gui serialport
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets network
 
 TARGET = RemotePowerSupply
 TEMPLATE = app
@@ -21,12 +21,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         PowerSupplyM.cpp \
         SerialComM.cpp \
+        TcpComM.cpp \
         main.cpp \
         mainwindow.cpp
 
 HEADERS += \
         PowerSupplyM.h \
         SerialComM.h \
+        TcpComM.h \
         mainwindow.h
 
 FORMS += \
