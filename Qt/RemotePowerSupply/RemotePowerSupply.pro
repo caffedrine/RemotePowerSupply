@@ -19,13 +19,15 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += \
+        PowerSupplyM.cpp \
+        SerialComM.cpp \
         main.cpp \
-        mainwindow.cpp \
-    SerialClient.cpp
+        mainwindow.cpp
 
 HEADERS += \
-        mainwindow.h \
-    SerialClient.h
+        PowerSupplyM.h \
+        SerialComM.h \
+        mainwindow.h
 
 FORMS += \
         mainwindow.ui
