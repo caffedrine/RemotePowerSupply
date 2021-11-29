@@ -34,11 +34,11 @@ void PowerSupplyM::OnPacketReceived(quint16 packetType, QByteArray packetBytes)
 {
     if( packetType == 0x00 )        // Packet type 0 is ACK
     {
-        qDebug() << "SERIAL ACK: " << packetBytes;
+        qDebug() << "SERIAL ACK: "<<packetBytes;
     }
     else if( packetType == 0x1)     // Packet type 1 is answer
     {
-        qDebug() << "Received answer packet: " << packetBytes;
+        qDebug() << "Received answer packet: "<<packetBytes;
 
         // Convert to string response
         QString response = QString(packetBytes);
