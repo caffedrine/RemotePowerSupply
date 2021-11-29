@@ -8,7 +8,7 @@ PowerSupplyM::PowerSupplyM(SerialComM *serialComHandler): serial(serialComHandle
 
 bool PowerSupplyM::PowerON()
 {
-    if( !this->serial )
+    if( this->serial == Q_NULLPTR)
         return false;
 
     return this->serial->SendPacket(1, QString("PWR_ON").toUtf8());
@@ -16,7 +16,7 @@ bool PowerSupplyM::PowerON()
 
 bool PowerSupplyM::PowerOFF()
 {
-    if( !this->serial )
+    if( this->serial == Q_NULLPTR)
         return false;
 
     return this->serial->SendPacket(1, QString("PWR_OFF").toUtf8());
@@ -24,7 +24,7 @@ bool PowerSupplyM::PowerOFF()
 
 bool PowerSupplyM::RequestPowerState()
 {
-    if( !this->serial )
+    if( this->serial == Q_NULLPTR)
         return false;
 
     return this->serial->SendPacket(1, QString("?").toUtf8());

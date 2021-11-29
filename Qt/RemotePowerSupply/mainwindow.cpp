@@ -167,6 +167,12 @@ void MainWindow::on_pushButton_disconnectSerialPort_clicked()
     {
         qDebug() << "FAILED: " << serialPort->getLastError();
     }
+
+    delete this->serialPort;
+    this->serialPort = Q_NULLPTR;
+
+    delete this->powerSupply;
+    this->powerSupply = Q_NULLPTR;
 }
 
 void MainWindow::on_comboBox_BaudRates_currentIndexChanged(int index)
@@ -176,7 +182,7 @@ void MainWindow::on_comboBox_BaudRates_currentIndexChanged(int index)
 
 void MainWindow::on_radioButton_powerON_clicked()
 {
-    if( !this->powerSupply )
+    if( this->powerSupply == Q_NULLPTR)
     {
         qDebug() << "No power supply handler created.";
         return;
@@ -187,7 +193,7 @@ void MainWindow::on_radioButton_powerON_clicked()
 
 void MainWindow::on_radioButton_powerOFF_clicked()
 {
-    if( !this->powerSupply )
+    if( this->powerSupply == Q_NULLPTR)
     {
         qDebug() << "No power supply handler created.";
         return;
@@ -199,11 +205,84 @@ void MainWindow::on_radioButton_powerOFF_clicked()
 
 void MainWindow::on_pushButton_refreshPowerState_clicked()
 {
-    if( !this->powerSupply )
+    if( this->powerSupply == Q_NULLPTR)
     {
         qDebug() << "No power supply handler created.";
         return;
     }
 
     this->powerSupply->RequestPowerState();
+}
+
+void MainWindow::on_pushButton_StartTcpServer_clicked()
+{
+    if( this->server == Q_NULLPTR)
+    {
+        this->server = new TcpComM(QHostAddress(this->ui->lineEdit_TcpServerIp->text()), QString(this->ui->lineEdit_TcpServerPort->text()).toUInt() );
+
+        connect(this->server, SIGNAL(TcpClientConnected(QTcpSocket*)), this, SLOT(on_TcpClientConnected(QTcpSocket*)));
+        connect(this->server, SIGNAL(TcpClientDisconnected(QTcpSocket*)), this, SLOT(on_TcpClientDisconnected(QTcpSocket*)));
+        connect(this->server, SIGNAL(TcpClientDataReception(QTcpSocket*,QByteArray)), this, SLOT(on_TcpClientDataReception(QTcpSocket*,QByteArray)));
+
+        this->showTcpServerState(true);
+    }
+}
+
+void MainWindow::on_pushButton_StopTcpServer_clicked()
+{
+    if( this->server != Q_NULLPTR )
+    {
+        delete this->server;
+        this->server = Q_NULLPTR;
+
+        this->showTcpServerState(false);
+        this->ui->label_tcpClientsConnected->setText( "0" );
+    }
+}
+
+void MainWindow::on_TcpClientConnected(QTcpSocket *client)
+{
+    int curr_clients = this->ui->label_tcpClientsConnected->text().toInt();
+    this->ui->label_tcpClientsConnected->setText( QString::number(++curr_clients) );
+
+    qDebug()<<"["<<client->localAddress().toString()<<":"<<client->localPort()<<"] CONNECTED";
+}
+
+void MainWindow::on_TcpClientDisconnected(QTcpSocket *client)
+{
+    int curr_clients = this->ui->label_tcpClientsConnected->text().toInt();
+    this->ui->label_tcpClientsConnected->setText( QString::number(--curr_clients) );
+    qDebug()<<"["<<client->localAddress().toString()<<":"<<client->localPort()<<"] DISCONNECTED";
+}
+
+void MainWindow::on_TcpClientDataReception(QTcpSocket *client, QByteArray bytes)
+{
+    qDebug()<<"["<<client->localAddress().toString()<<":"<<client->localPort()<<"] TCP RECV: "<< bytes;
+
+    QString data = QString(bytes).trimmed();
+
+    if( this->powerSupply == Q_NULLPTR )
+    {
+        client->write(" ->NOT OK\n");
+        return;
+    }
+
+    if( data == "PWR_OFF" )
+    {
+        if( this->powerSupply->PowerOFF())
+            client->write(" ->OK\n");
+        else
+            client->write(" ->NOT OK\n");
+    }
+    else if (data == "PWR_ON")
+    {
+        if(this->powerSupply->PowerON())
+            client->write(" ->OK\n");
+        else
+            client->write(" ->NOT OK\n");
+    }
+    else if( data == "?" )
+    {
+        //client->write( this->powerSupply-> )
+    }
 }

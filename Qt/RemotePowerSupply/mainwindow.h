@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QTime>
 
+#include "TcpComM.h"
 #include "SerialComM.h"
 #include "PowerSupplyM.h"
 
@@ -26,6 +27,8 @@ private slots:
     void showPowerSupplyState(power_supply_state_t state);
     void showTcpServerState(bool started);
 
+    void on_pushButton_StartTcpServer_clicked();
+    void on_pushButton_StopTcpServer_clicked();
     void on_pushButton_updateList_clicked();
     void on_pushButton_connectSerialPort_clicked();
     void on_pushButton_disconnectSerialPort_clicked();
@@ -35,7 +38,11 @@ private slots:
     void on_radioButton_powerOFF_clicked();
     void on_pushButton_refreshPowerState_clicked();
 
-private:
+    void on_TcpClientConnected(QTcpSocket *client);
+    void on_TcpClientDisconnected(QTcpSocket *client);
+    void on_TcpClientDataReception(QTcpSocket *client, QByteArray bytes);
+
+    private:
     Ui::MainWindow *ui;
 
     /* Serial port handler */
@@ -44,6 +51,9 @@ private:
 
     /* Power supply handler */
     class PowerSupplyM *powerSupply = Q_NULLPTR;
+
+    /* TCP Server Manager */
+    class TcpComM *server = Q_NULLPTR;
 };
 
 #endif // MAINWINDOW_H
