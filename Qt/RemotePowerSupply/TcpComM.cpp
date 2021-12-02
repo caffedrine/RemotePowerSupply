@@ -1,6 +1,6 @@
 #include "TcpComM.h"
 
-TcpComM::TcpComM(QHostAddress address, quint16 tcp_port): TcpAddress(address), TcpPort(tcp_port)
+TcpComM::TcpComM(QHostAddress address, quint16 tcp_port, quint32 timeout_ms): TcpAddress(address), TcpPort(tcp_port), TcpClientTimeoutMs(timeout_ms)
 {
     this->server = new QTcpServer(this);
     this->server->setMaxPendingConnections(1);
@@ -15,6 +15,15 @@ TcpComM::TcpComM(QHostAddress address, quint16 tcp_port): TcpAddress(address), T
     else
     {
         qDebug() << "TCP server started on "<<address.toString()<<":"<<tcp_port;
+    }
+
+    if( this->TcpClientTimeoutMs > 0 )
+    {
+
+        this->ClientTimeoutTimer = new QTimer();
+
+        // Connect the timeout timer
+        connect(this->ClientTimeoutTimer, SIGNAL(timeout()), this, SLOT(clientTimeoutReached()));
     }
 }
 
@@ -33,6 +42,13 @@ TcpComM::~TcpComM()
         this->server = Q_NULLPTR;
         qDebug() << "TCP server stopped";
     }
+
+    // Delete timer if it was created
+    if( this->ClientTimeoutTimer != Q_NULLPTR )
+    {
+        delete this->ClientTimeoutTimer;
+        this->ClientTimeoutTimer = Q_NULLPTR;
+    }
 }
 
 void TcpComM::newConnection()
@@ -48,6 +64,9 @@ void TcpComM::newConnection()
         connect(this->client, SIGNAL(readyRead()),this, SLOT(clienDataAvailable()));
 
         emit this->TcpClientConnected(this->client);
+
+        // Start a timer and disconnect client if it does not send data within 1s
+        this->ClientTimeoutTimer->start(this->TcpClientTimeoutMs);
     }
     else
     {
@@ -59,9 +78,26 @@ void TcpComM::clientDisconnected()
 {
     emit this->TcpClientDisconnected(this->client);
     this->client = Q_NULLPTR;
+    if( this->TcpClientTimeoutMs > 0 )
+    {
+        this->ClientTimeoutTimer->stop();
+    }
 }
 
 void TcpComM::clienDataAvailable()
 {
     emit this->TcpClientDataReception(this->client, this->client->readAll());
+
+    if( this->TcpClientTimeoutMs > 0 )
+    {
+        this->ClientTimeoutTimer->start(this->TcpClientTimeoutMs);
+    }
+}
+
+void TcpComM::clientTimeoutReached()
+{
+    qDebug() << "Close "<<this->client->localAddress().toString()<<":"<<this->client->localPort()<<" due to timout greather than "<<this->TcpClientTimeoutMs<<" ms";
+    this->client->write("Timeout reached, bye!");
+    this->client->close();
+    this->ClientTimeoutTimer->stop();
 }

@@ -54,6 +54,7 @@ private slots:
 
     /* TCP Server Manager */
     class TcpComM *server = Q_NULLPTR;
+    QTimer ClientTimeoutTimer;
 };
 
 #endif // MAINWINDOW_H

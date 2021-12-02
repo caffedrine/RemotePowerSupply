@@ -4,12 +4,13 @@
 #include <QObject>
 #include <QTcpSocket>
 #include <QTcpServer>
+#include <QTimer>
 
 class TcpComM: public QObject
 {
         Q_OBJECT
     public:
-        TcpComM(QHostAddress address, quint16 tcp_port);
+        TcpComM(QHostAddress address, quint16 tcp_port, quint32 client_timeout_ms = 30000);
         ~TcpComM();
 
     signals:
@@ -18,8 +19,12 @@ class TcpComM: public QObject
         void newConnection();
         void clientDisconnected();
         void clienDataAvailable();
+        void clientTimeoutReached();
 
     private:
+        QTimer *ClientTimeoutTimer = Q_NULLPTR;
+
+        quint32 TcpClientTimeoutMs;
         QHostAddress TcpAddress;
         quint16 TcpPort;
 
