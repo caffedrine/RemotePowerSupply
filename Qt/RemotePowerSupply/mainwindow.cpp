@@ -218,7 +218,7 @@ void MainWindow::on_pushButton_StartTcpServer_clicked()
 {
     if( this->server == Q_NULLPTR)
     {
-        this->server = new TcpComM(QHostAddress(this->ui->lineEdit_TcpServerIp->text()), QString(this->ui->lineEdit_TcpServerPort->text()).toUInt() );
+        this->server = new TcpComM(QHostAddress(this->ui->lineEdit_TcpServerIp->text()), QString(this->ui->lineEdit_TcpServerPort->text()).toUInt(), 3000 );
 
         connect(this->server, SIGNAL(TcpClientConnected(QTcpSocket*)), this, SLOT(on_TcpClientConnected(QTcpSocket*)));
         connect(this->server, SIGNAL(TcpClientDisconnected(QTcpSocket*)), this, SLOT(on_TcpClientDisconnected(QTcpSocket*)));
@@ -298,4 +298,7 @@ void MainWindow::on_TcpClientDataReception(QTcpSocket *client, QByteArray bytes)
     {
         qDebug() << "Invalid command received: "<<data;
     }
+
+    // Close connection after command was received
+    client->close();
 }
