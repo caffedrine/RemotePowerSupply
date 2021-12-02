@@ -246,6 +246,9 @@ void MainWindow::on_TcpClientConnected(QTcpSocket *client)
     this->ui->label_tcpClientsConnected->setText( QString::number(++curr_clients) );
 
     qDebug()<<"["<<client->localAddress().toString()<<":"<<client->localPort()<<"] CONNECTED";
+
+    client->write("Welcome to PeakTech 6225A Remote Control\n");
+    client->write("Available commands: PWR_ON, PWR_OFF, ?\n\n");
 }
 
 void MainWindow::on_TcpClientDisconnected(QTcpSocket *client)
@@ -283,6 +286,16 @@ void MainWindow::on_TcpClientDataReception(QTcpSocket *client, QByteArray bytes)
     }
     else if( data == "?" )
     {
-        //client->write( this->powerSupply-> )
+        power_supply_state_t state = this->powerSupply->ReadPowerState();
+        if( state == POWER_ON )
+            client->write(" ->PWR_ON\n");
+        else if (state == POWER_OFF)
+            client->write(" ->PWR_OFF\n");
+        else
+            client->write(" ->PWR_INVALID\n");
+    }
+    else
+    {
+        qDebug() << "Invalid command received: "<<data;
     }
 }

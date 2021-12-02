@@ -29,7 +29,7 @@ TcpComM::~TcpComM()
 
     if( this->server != Q_NULLPTR)
     {
-        //delete this->server;
+        delete this->server;
         this->server = Q_NULLPTR;
         qDebug() << "TCP server stopped";
     }
@@ -39,7 +39,7 @@ void TcpComM::newConnection()
 {
     // Client cannot stay connected more than one second
 
-    if(this->client == Q_NULLPTR)
+    if(!this->client || !this->client->isOpen())
     {
         // need to grab the socket
         this->client = this->server->nextPendingConnection();
@@ -48,9 +48,6 @@ void TcpComM::newConnection()
         connect(this->client, SIGNAL(readyRead()),this, SLOT(clienDataAvailable()));
 
         emit this->TcpClientConnected(this->client);
-
-
-        //this->client->close();
     }
     else
     {
@@ -61,7 +58,6 @@ void TcpComM::newConnection()
 void TcpComM::clientDisconnected()
 {
     emit this->TcpClientDisconnected(this->client);
-    delete this->client;
     this->client = Q_NULLPTR;
 }
 

@@ -20,9 +20,11 @@ class PowerSupplyM: public QObject
         PowerSupplyM(SerialComM *serialComHandler);
         bool PowerON();
         bool PowerOFF();
+        power_supply_state_t ReadPowerState();
         bool RequestPowerState();
 
     private:
+        power_supply_state_t StatePowerSupply = POWER_INVALID;
         SerialComM *serial = Q_NULLPTR;
         bool SendPacket(quint16 packetType, QByteArray packetBytes);
 

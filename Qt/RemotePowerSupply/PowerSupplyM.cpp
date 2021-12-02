@@ -30,6 +30,11 @@ bool PowerSupplyM::RequestPowerState()
     return this->serial->SendPacket(1, QString("?").toUtf8());
 }
 
+power_supply_state_t PowerSupplyM::ReadPowerState()
+{
+    return this->StatePowerSupply;
+}
+
 void PowerSupplyM::OnPacketReceived(quint16 packetType, QByteArray packetBytes)
 {
     if( packetType == 0x00 )        // Packet type 0 is ACK
@@ -44,14 +49,17 @@ void PowerSupplyM::OnPacketReceived(quint16 packetType, QByteArray packetBytes)
         QString response = QString(packetBytes);
         if( response == "ON" )
         {
+            this->StatePowerSupply = POWER_ON;
             emit this->PowerStatusChanged(POWER_ON);
         }
         else if( response == "OFF" )
         {
+            this->StatePowerSupply = POWER_OFF;
             emit this->PowerStatusChanged(POWER_OFF);
         }
         else
         {
+            this->StatePowerSupply = POWER_INVALID;
             qDebug() << "Invalid packet answer received: " << response;
             emit this->PowerStatusChanged(POWER_INVALID);
         }
