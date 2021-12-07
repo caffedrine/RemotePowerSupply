@@ -1,0 +1,24 @@
+IDI_ICON1               ICON    DISCARDABLE     "icon.ico"
+
+
+1 VERSIONINFO
+    FILEVERSION    0,0,0,0
+    PRODUCTVERSION 0,0,0,0
+{
+    BLOCK "StringFileInfo"
+    {
+        BLOCK "000004B0"
+        {
+            VALUE "CompanyName",        "CryptoCDB"
+            VALUE "FileDescription",    "PeakTech 6225A Remote Controller"
+            VALUE "FileVersion",        "v1.0.0\0"
+            VALUE "OriginalFilename",   "RemotePowerSupply.exe\0"
+            VALUE "ProductName",        "Remote Power Supply Control\0"
+            VALUE "ProductVersion",     "v1.0.0"
+        }
+    }
+    BLOCK "VarFileInfo"
+    {
+        VALUE "Translation", 0x0000, 0x04B0
+    }
+}

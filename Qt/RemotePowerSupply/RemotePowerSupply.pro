@@ -37,3 +37,4 @@ FORMS += \
 RESOURCES += \
     res/resources.qrc
 
+RC_FILE = res/win.rc
