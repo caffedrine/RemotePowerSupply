@@ -25,7 +25,7 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS
 file(GLOB_RECURSE Proj_SOURCES "src/*.cpp" "src/*.c")
 file(GLOB_RECURSE Proj_HEADERS "src/*.h" "src/*.hpp")
 file(GLOB_RECURSE Proj_UIS     "src/*.ui")
-file(GLOB_RECURSE Proj_RES     "src/res/*.qrc")
+file(GLOB_RECURSE Proj_RES     "res/*.qrc")
 
 foreach (_headerFile ${Proj_HEADERS})
     get_filename_component(_dir ${_headerFile} PATH)
