@@ -1,19 +1,16 @@
 cmake_minimum_required(VERSION 3.5)
 
-project(RemotePowerSupply)
+project(RemotePowerSupply LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
-# Find includes in the build directories
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-
-# Turn on automatic invocation of the MOC, UIC & RCC
-set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(QT NAMES Qt5 COMPONENTS Widgets REQUIRED)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS
     Widgets
     Core
@@ -53,3 +50,6 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt${QT_VERSION_MAJOR}::SerialPort
     Qt${QT_VERSION_MAJOR}::Network
     Qt${QT_VERSION_MAJOR}::Widgets)
+
+# Deploy app
+include(deploy.cmake)
