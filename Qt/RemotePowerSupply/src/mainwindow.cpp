@@ -15,6 +15,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // Select last index from the list as this is most usual
     this->ui->comboBox_serialSlots->setCurrentIndex(this->ui->comboBox_serialSlots->count() - 1);
+
+    this->setFixedSize(this->width(), this->height());
 }
 
 MainWindow::~MainWindow()
@@ -302,3 +304,30 @@ void MainWindow::on_TcpClientDataReception(QTcpSocket *client, QByteArray bytes)
     // Close connection after command was received
     client->close();
 }
+
+void MainWindow::on_checkBox_StickToTop_stateChanged(int arg1)
+{
+#ifdef _WIN32
+    if (arg1)
+    {
+        SetWindowPos(reinterpret_cast<HWND>(this->winId()), HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    }
+    else
+    {
+        SetWindowPos(reinterpret_cast<HWND>(this->winId()), HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+    }
+#else
+    Qt::WindowFlags flags = this->windowFlags();
+    if (checked)
+    {
+        this->setWindowFlags(flags | Qt::CustomizeWindowHint | Qt::WindowStaysOnTopHint);
+        this->show();
+    }
+    else
+    {
+        this->setWindowFlags(flags ^ (Qt::CustomizeWindowHint | Qt::WindowStaysOnTopHint));
+        this->show();
+    }
+#endif
+}
+

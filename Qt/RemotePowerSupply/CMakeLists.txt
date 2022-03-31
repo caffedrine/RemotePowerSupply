@@ -10,7 +10,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
+find_package(QT NAMES Qt6 COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS
     Widgets
     Core
@@ -19,7 +19,7 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS
     REQUIRED)
 
 ######################################Include everuthing src##################################
-file(GLOB_RECURSE Proj_SOURCES "src/*.cpp" "src/*.c")
+file(GLOB_RECURSE Proj_SOURCES "src/*.c" "src/*.cpp")
 file(GLOB_RECURSE Proj_HEADERS "src/*.h" "src/*.hpp")
 file(GLOB_RECURSE Proj_UIS     "src/*.ui")
 file(GLOB_RECURSE Proj_RES     "res/*.qrc")

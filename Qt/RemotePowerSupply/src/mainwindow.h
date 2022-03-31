@@ -6,6 +6,10 @@
 #include <QTimer>
 #include <QTime>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 #include "TcpComM.h"
 #include "SerialComM.h"
 #include "PowerSupplyM.h"
@@ -41,6 +45,8 @@ private slots:
     void on_TcpClientConnected(QTcpSocket *client);
     void on_TcpClientDisconnected(QTcpSocket *client);
     void on_TcpClientDataReception(QTcpSocket *client, QByteArray bytes);
+
+    void on_checkBox_StickToTop_stateChanged(int arg1);
 
     private:
     Ui::MainWindow *ui;
