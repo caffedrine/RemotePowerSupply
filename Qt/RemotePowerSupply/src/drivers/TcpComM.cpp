@@ -10,11 +10,11 @@ TcpComM::TcpComM(QHostAddress address, quint16 tcp_port, quint32 timeout_ms): Tc
 
     if(!this->server->listen(this->TcpAddress, this->TcpPort))
     {
-        qDebug().nospace().noquote() << "[TCP SERVER] TCP server could not start on "<<address.toString()<<":"<<tcp_port;
+        qWarning().nospace().noquote() << "[TCP SERVER] TCP server could not start on "<<address.toString()<<":"<<tcp_port;
     }
     else
     {
-        qDebug().nospace().noquote()<< "[TCP SERVER] TCP server started on "<<address.toString()<<":"<<tcp_port;
+        qInfo().nospace().noquote()<< "[TCP SERVER] TCP server started on "<<address.toString()<<":"<<tcp_port;
     }
 
     if( this->TcpClientTimeoutMs > 0 )
@@ -40,7 +40,7 @@ TcpComM::~TcpComM()
     {
         delete this->server;
         this->server = Q_NULLPTR;
-        qDebug().nospace().noquote()<< "[TCP SERVER] TCP server stopped";
+        qInfo().nospace().noquote()<< "[TCP SERVER] TCP server stopped";
     }
 
     // Delete timer if it was created

@@ -190,7 +190,7 @@ void SerialComM::readyRead()
             // Remove processed bytes from buffer
             this->ReadDataBuffer.remove(0, this->CurrPacket.Length);
 
-            qDebug().nospace().noquote() << "[SERIAL ComM] RECV PACKET <: @" << this->CurrPacket.Type << "$" << this->CurrPacket.Payload << (this->CurrPacket.Type == PKT_TYPE_ACK ? " (ACK)":"");
+            qInfo().nospace().noquote() << "[SERIAL ComM] RECV PACKET <: @" << this->CurrPacket.Type << "$" << this->CurrPacket.Payload << (this->CurrPacket.Type == PKT_TYPE_ACK ? " (ACK)":"");
 
             // Emit signal that a packet was received
             emit this->packetReceived(this->CurrPacket.Type, this->CurrPacket.Payload);
@@ -279,12 +279,12 @@ bool SerialComM::SendPacket(quint16 packetType, QByteArray packetBytes)
 
     if(  this->pSerialPort->write(packet) )
     {
-        qDebug().nospace().noquote() << "[SERIAL ComM] SEND PACKET >: hex(" << packet.toHex(' ') << ")";
+        qInfo().nospace().noquote() << "[SERIAL ComM] SEND PACKET >: hex(" << packet.toHex(' ') << ")";
         return true;
     }
     else
     {
-        qDebug().nospace().noquote() << "[SERIAL ComM] SEND PACKET ERROR >: hex(" << packet.toHex(' ') << ")";
+        qWarning().nospace().noquote() << "[SERIAL ComM] SEND PACKET ERROR >: hex(" << packet.toHex(' ') << ")";
         return false;
     }
 }

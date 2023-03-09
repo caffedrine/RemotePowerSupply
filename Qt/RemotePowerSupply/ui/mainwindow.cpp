@@ -50,7 +50,7 @@ void MainWindow::showSerialPortStatus(bool connected)
     }
     else
     {
-        qDebug().nospace().noquote() << "[SERIAL PORT] Disconnected";
+        qInfo().nospace().noquote() << "[SERIAL PORT] Disconnected";
         this->ui->connectionStatusLabel->setText("NOT CONNECTED");
         this->ui->connectionStatusLabel->setStyleSheet("QLabel { color : red; }");
     }
@@ -129,7 +129,7 @@ void MainWindow::on_pushButton_connectSerialPort_clicked()
     {
         if(serialPort->isOpen())
         {
-            qDebug().nospace().noquote()<< ("[SERIAL PORT] ERROR: You must disconnect first!");
+            qWarning().nospace().noquote()<< ("[SERIAL PORT] ERROR: You must disconnect first!");
             return;
         }
     }
@@ -141,12 +141,12 @@ void MainWindow::on_pushButton_connectSerialPort_clicked()
 
     if(serialPort->connect(portName, this->baud))
     {
-        qDebug().nospace().noquote()<< "[SERIAL PORT] SUCCESS: CONNECTED to " << portName;
+        qInfo().nospace().noquote()<< "[SERIAL PORT] SUCCESS: CONNECTED to " << portName;
         this->showSerialPortStatus(true);
     }
     else
     {
-        qDebug().nospace().noquote()<< "[SERIAL PORT] FAILED2CONN: " << serialPort->getLastError();
+        qWarning().nospace().noquote()<< "[SERIAL PORT] FAILED2CONN: " << serialPort->getLastError();
         if(serialPort != Q_NULLPTR || serialPort)
         {
             delete serialPort;
@@ -166,7 +166,7 @@ void MainWindow::on_pushButton_disconnectSerialPort_clicked()
 {
     if(serialPort == Q_NULLPTR || serialPort == 0 || !this->serialPort->isOpen())
     {
-        qDebug().nospace().noquote()<< "[SERIAL PORT] FAILED: You're not connected to serial port!";
+        qWarning().nospace().noquote()<< "[SERIAL PORT] FAILED: You're not connected to serial port!";
         return;
     }    
 
@@ -178,13 +178,13 @@ void MainWindow::on_pushButton_disconnectSerialPort_clicked()
         }
         else
         {
-            qDebug().nospace().noquote()<< "[SERIAL PORT] FAILED: " << serialPort->getLastError();
+            qWarning().nospace().noquote()<< "[SERIAL PORT] FAILED: " << serialPort->getLastError();
             return;
         }
     }
     else
     {
-        qDebug().nospace().noquote()<< "[SERIAL PORT] FAILED: " << serialPort->getLastError();
+        qWarning().nospace().noquote()<< "[SERIAL PORT] FAILED: " << serialPort->getLastError();
     }
 
     delete this->serialPort;
@@ -203,7 +203,7 @@ void MainWindow::on_radioButton_powerON_clicked()
 {
     if( this->powerSupply == Q_NULLPTR)
     {
-        qDebug().nospace().noquote()<< "No power supply handler created.";
+        qWarning().nospace().noquote()<< "No power supply handler created.";
         return;
     }
 
@@ -214,7 +214,7 @@ void MainWindow::on_radioButton_powerOFF_clicked()
 {
     if( this->powerSupply == Q_NULLPTR)
     {
-        qDebug().nospace().noquote()<< "No power supply handler created.";
+        qWarning().nospace().noquote()<< "No power supply handler created.";
         return;
     }
 
@@ -226,7 +226,7 @@ void MainWindow::on_pushButton_refreshPowerState_clicked()
 {
     if( this->powerSupply == Q_NULLPTR)
     {
-        qDebug().nospace().noquote()<< "No power supply handler created.";
+        qWarning().nospace().noquote()<< "No power supply handler created.";
         return;
     }
 
@@ -264,7 +264,7 @@ void MainWindow::on_TcpClientConnected(QTcpSocket *client)
     int curr_clients = this->ui->label_tcpClientsConnected->text().toInt();
     this->ui->label_tcpClientsConnected->setText( QString::number(++curr_clients) );
 
-    qDebug().nospace().noquote() <<"[TCP SERVER] ["<<client->localAddress().toString()<<":"<<client->localPort()<<"] CONNECTED";
+    qInfo().nospace().noquote() <<"[TCP SERVER] ["<<client->localAddress().toString()<<":"<<client->localPort()<<"] CONNECTED";
 
     client->write("Welcome to PeakTech 6225A Remote Control\n");
     client->write("Available commands: PWR_ON, PWR_OFF, ?\n\n");
@@ -274,12 +274,12 @@ void MainWindow::on_TcpClientDisconnected(QTcpSocket *client)
 {
     int curr_clients = this->ui->label_tcpClientsConnected->text().toInt();
     this->ui->label_tcpClientsConnected->setText( QString::number(--curr_clients) );
-    qDebug().nospace().noquote() <<"[TCP SERVER] ["<<client->localAddress().toString()<<":"<<client->localPort()<<"] DISCONNECTED";
+    qInfo().nospace().noquote() <<"[TCP SERVER] ["<<client->localAddress().toString()<<":"<<client->localPort()<<"] DISCONNECTED";
 }
 
 void MainWindow::on_TcpClientDataReception(QTcpSocket *client, QByteArray bytes)
 {
-    qDebug().nospace().noquote() <<"[TCP SERVER] ["<<client->localAddress().toString()<<":"<<client->localPort()<<"] RECV <: " << QString(bytes).replace("\n", "\\n").replace("\r", "\\r");
+    qInfo().nospace().noquote() <<"[TCP SERVER] ["<<client->localAddress().toString()<<":"<<client->localPort()<<"] RECV <: " << QString(bytes).replace("\n", "\\n").replace("\r", "\\r");
 
     QString data = QString(bytes).trimmed();
 
@@ -316,7 +316,7 @@ void MainWindow::on_TcpClientDataReception(QTcpSocket *client, QByteArray bytes)
     }
     else
     {
-        qDebug().nospace().noquote()<< "[TCP SERVER] Invalid command received: "<<data;
+        qWarning().nospace().noquote()<< "[TCP SERVER] Invalid command received: "<<data;
         client->write(" ->INVALID COMMAND\n");
     }
 
