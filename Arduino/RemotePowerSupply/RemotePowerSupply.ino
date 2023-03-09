@@ -211,6 +211,13 @@ private:
 class SerialCommManager
 {
 public:
+	typedef enum
+	{
+		PKT_TYPE_ACK = 0,
+		PKT_TYPE_DATA = 1,
+		PKT_TYPE_ERROR = 2,
+	}packet_type_t;
+
 	SerialCommManager(HardwareSerial *srl, unsigned long baud)
 	{
 		this->serial = srl;
@@ -328,6 +335,8 @@ public:
 					this->readBytesIdx = 0;
 					this->readLength = 0;
 
+					// Remove last two \r\n if included within packet
+
 //					Serial.println("Time elapsed2: ");
 //					Serial.println( (int)(millis() - this->t1), DEC);
 				}
@@ -407,17 +416,26 @@ void SerialOnCommandReceived(uint8_t *data, uint16_t data_len)
 		serial_command += String((char)data[i]);
 
 
+	/// TODO: Fix this problem. Sometimes ACK will be send AFTER power supply transitioned
+	// Correct: send the ACK first back and only after that proceed with triggering power supply ON/OFF
+	// Also issue an error if power supply could have not been controlled
+
+	// Send an ACK command indicating that command was received
+	comm.SendPacket("1", SerialCommManager::PKT_TYPE_ACK);
+
 	if( serial_command == "PWR_ON" )
 	{
-		comm.SendPacket( powerSupply.PowerON()?"1":"0", 0);
+		if( !powerSupply.PowerON() )
+			comm.SendPacket( "ERR_PWR_OFF_CTRL", SerialCommManager::PKT_TYPE_ERROR);
 	}
 	else if( serial_command == "PWR_OFF")
 	{
-		comm.SendPacket( powerSupply.PowerOFF()?"1":"0", 0);
+		if( !powerSupply.PowerOFF() )
+			comm.SendPacket( "ERR_PWR_OFF_CTRL", SerialCommManager::PKT_TYPE_ERROR);
 	}
 	else if (serial_command == "?")
 	{
-		comm.SendPacket( (powerSupply.GetPowerSupplyState() == PowerSupplyManager::POWER_ON) ? "ON" : "OFF", 1);
+		comm.SendPacket( (powerSupply.GetPowerSupplyState() == PowerSupplyManager::POWER_ON) ? "ON" : "OFF", SerialCommManager::PKT_TYPE_DATA);
 	}
 
 	// Packet type 0 si ACK to a request. Packet type 1 is answer to a request
@@ -426,7 +444,7 @@ void SerialOnCommandReceived(uint8_t *data, uint16_t data_len)
 void PowerSupplyOnStateChange(PowerSupplyManager::power_supply_state_t new_state)
 {
 	// Sent after read was stabilized
-	comm.SendPacket( (new_state == PowerSupplyManager::POWER_ON)? "ON" : "OFF", 1);
+	comm.SendPacket( (new_state == PowerSupplyManager::POWER_ON)? "ON" : "OFF", SerialCommManager::PKT_TYPE_DATA);
 }
 
 // The loop function is called in an endless loop

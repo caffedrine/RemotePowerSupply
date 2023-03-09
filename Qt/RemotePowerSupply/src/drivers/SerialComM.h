@@ -9,33 +9,34 @@
 #include <QDebug>
 #include <QTime>
 
-typedef enum
-{
-	ACK = 0,
-	DATA = 1
-} serial_comm_packet_type_t;
-
-typedef enum
-{
-    WAIT_START_TAG,
-    WAIT_LENGTH,
-    WAIT_PACKET_TYPE,
-    WAIT_PACKET_PAYLOAD
-} serial_comm_packet_read_state_t;
-
-typedef struct
-{
-    uint16_t Length;
-    uint16_t Type;
-    QByteArray Payload;
-}serial_comm_packet_t;
-
 class SerialComM: public QObject
 {
 	Q_OBJECT
 
 public:
 	typedef QSerialPort::BaudRate BaudRate;	//let user choose his own boudrate
+
+    typedef enum
+    {
+        PKT_TYPE_ACK = 0,
+        PKT_TYPE_DATA = 1,
+        PKT_TYPE_ERROR = 2,
+    } serial_comm_packet_type_t;
+
+    typedef enum
+    {
+        WAIT_START_TAG,
+        WAIT_LENGTH,
+        WAIT_PACKET_TYPE,
+        WAIT_PACKET_PAYLOAD
+    } serial_comm_packet_read_state_t;
+
+    typedef struct
+    {
+        uint16_t Length;
+        uint16_t Type;
+        QByteArray Payload;
+    }serial_comm_packet_t;
 
     SerialComM();
     ~SerialComM();

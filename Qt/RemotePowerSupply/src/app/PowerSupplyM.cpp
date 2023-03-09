@@ -37,11 +37,11 @@ power_supply_state_t PowerSupplyM::ReadPowerState()
 
 void PowerSupplyM::OnPacketReceived(quint16 packetType, QByteArray packetBytes)
 {
-    if( packetType == 0x00 )        // Packet type 0 is ACK
+    if( packetType == SerialComM::PKT_TYPE_ACK )        // Packet type 0 is ACK
     {
         // do nothing here
     }
-    else if( packetType == 0x1)     // Packet type 1 is answer
+    else if( packetType == SerialComM::PKT_TYPE_DATA)     // Packet type 1 is answer
     {
         // Convert to string response
         QString response = QString(packetBytes);
@@ -61,6 +61,9 @@ void PowerSupplyM::OnPacketReceived(quint16 packetType, QByteArray packetBytes)
             qWarning().nospace().noquote() << "[PS MANAGER] Invalid packet answer received: " << response;
             emit this->PowerStatusChanged(POWER_INVALID);
         }
+    }
+    else if ( packetType == SerialComM::PKT_TYPE_ERROR )
+    {
 
     }
     else // Unexpected packet type

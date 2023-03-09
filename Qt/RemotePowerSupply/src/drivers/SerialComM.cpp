@@ -124,7 +124,9 @@ void SerialComM::readyRead()
 
     // Read serial data and append to current buffer
     this->ReadDataBuffer += this->pSerialPort->readAll();
-    //qDebug().nospace().noquote()<< "SERIAL RECV: " << this->pSerialPort->readAll();
+    //qDebug().nospace().noquote()<< "SERIAL RECV: " << this->ReadDataBuffer << " hex: " << this->ReadDataBuffer.toHex(' ');
+
+    START_STATE_MACHINE:
 
     // Check state. Wait for a fragmented packet or for a new packet
     if( this->ReadState == WAIT_START_TAG )
@@ -142,11 +144,9 @@ void SerialComM::readyRead()
         {
             // Data is junk since start token is not found, so discard it
             this->ReadDataBuffer = QByteArray();
-            qWarning().nospace().noquote() << "[SERIAL ComM] Junk data discarded on phase WAIT_START_TAG";
-
+            qWarning().nospace().noquote() << "[SERIAL ComM] Junk data discarded on phase WAIT_START_TAG, received 0x" << this->ReadDataBuffer.left(1).toHex() << ", expected 0x23 (#)";
         }
     }
-
 
     if( this->ReadState == WAIT_LENGTH )
     {
@@ -183,20 +183,33 @@ void SerialComM::readyRead()
 
     if( this->ReadState == WAIT_PACKET_PAYLOAD )
     {
-        if( this->ReadDataBuffer.count() >= this->CurrPacket.Length )
+        if( this->ReadDataBuffer.size() >= this->CurrPacket.Length )
         {
             this->CurrPacket.Payload = this->ReadDataBuffer.left(this->CurrPacket.Length);
 
             // Remove processed bytes from buffer
             this->ReadDataBuffer.remove(0, this->CurrPacket.Length);
 
-            qDebug().nospace().noquote() << "[SERIAL ComM] RECV PACKET <: @" << this->CurrPacket.Type << "$" << this->CurrPacket.Payload << (this->CurrPacket.Type == ACK ? " (ACK)":"");
+            qDebug().nospace().noquote() << "[SERIAL ComM] RECV PACKET <: @" << this->CurrPacket.Type << "$" << this->CurrPacket.Payload << (this->CurrPacket.Type == PKT_TYPE_ACK ? " (ACK)":"");
 
             // Emit signal that a packet was received
             emit this->packetReceived(this->CurrPacket.Type, this->CurrPacket.Payload);
 
             // Reset state
             this->ReadState = WAIT_START_TAG;
+
+            // Remove \r\n if any appended after the packet
+            if( this->ReadDataBuffer.startsWith('\r') )
+                this->ReadDataBuffer.remove(0, 1);
+            if( this->ReadDataBuffer.startsWith('\n') )
+                this->ReadDataBuffer.remove(0, 1);
+
+            // Go back to the beginning of the state machine in the same cycle if there are other bytes appended (there might be multiple packets concatenated)
+            if( this->ReadDataBuffer.size() > 0 )
+            {
+                //qDebug().nospace().noquote() << "Multiple packets on same line detected, next packet: " << this->ReadDataBuffer << ", hex: " << this->ReadDataBuffer.toHex(' ');
+                goto START_STATE_MACHINE;
+            }
         }
         else
         {
@@ -250,15 +263,15 @@ bool SerialComM::SendPacket(quint16 packetType, QByteArray packetBytes)
     packet.append('#');
 
     // Add packet length
-    if( packetBytes.count() < 255 )
+    if( packetBytes.size() < 255 )
     {
         packet.append((char)(0));
-        packet.append((char)(packetBytes.count()));
+        packet.append((char)(packetBytes.size()));
     }
     else
     {
-        packet.append((char)(packetBytes.count() >> 8));
-        packet.append((char)(packetBytes.count() & 0x00FF ));
+        packet.append((char)(packetBytes.size() >> 8));
+        packet.append((char)(packetBytes.size() & 0x00FF ));
     }
 
     // Add packet
